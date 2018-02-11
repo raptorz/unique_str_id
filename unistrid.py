@@ -32,7 +32,7 @@ class UniqueStringID(object):
         S = list(range(256))
         j = 0
         for i in range(256):
-            j = (j + S[i] + ord(self.key[i % len(self.key)])) % 256
+            j = (j + S[i] + ord(self.key[i % len(self.key)])) & 0xFF
             S[i], S[j] = S[j], S[i]
         return S
             
@@ -46,12 +46,6 @@ class UniqueStringID(object):
             S[i], S[j] = S[j], S[i]
             out.append(c ^ S[(S[i] + S[j]) & 0xFF])
         return out
-    
-    def get_nonce(self):
-        nonce_length = int((self.bits_target - self.bits_id + 7) / 8)
-        nonce = os.urandom(nonce_length)
-        padding = b"".join([b'\0' for i in range(8 - nonce_length)])
-        return struct.unpack(">Q", b"".join([padding, nonce]))
     
     def merge(self, id, nonce):
         bytes_encrypt = int(self.bits_encrypt / 8)
@@ -117,8 +111,7 @@ class UniqueStringID(object):
         mask = 0xFFFFFFFFFFFFFFFF >> (64 - self.bits_encrypt)
         data = list(struct.pack(">Q", data & mask))[-int(self.bits_encrypt / 8):]
         data = self.rc4(data)
-        id = self.parse(data)
-        return id
+        return self.parse(data)
 
 
 if __name__ == "__main__":
